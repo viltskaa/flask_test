@@ -1,10 +1,8 @@
-from dataclasses import asdict
 from random import randint
 
 from flask import Flask, render_template, redirect
 
 from forms.SignUpForm import SignUpForm
-from forms.form import GravitationForm
 from models import *
 
 users = []
@@ -13,7 +11,14 @@ users = []
 def generate_users(n: int):
     for i in range(n):
         age = randint(1, 100)
-        user = User(i, "test@example.com", "test", age, f"city{i}", "12345")
+        user = User(
+            i,
+            "test@example.com",
+            "".join([chr(randint(73, 89)) for _ in range(randint(5, 15))]),
+            age,
+            f"city{i}",
+            "12345"
+        )
         users.append(user)
 
 
@@ -24,28 +29,10 @@ def addUser(email, name, age, city, password):
         last_id = max(users, key=lambda x: x.id).id + 1
 
     user = User(last_id, email, name, age, city, password)
-    users.append(user)
+    users.insert(0, user)
 
 
 app = Flask(__name__)
-
-
-@app.route('/')
-def hello_world():
-    return render_template("index.html")
-
-
-@app.route("/gr_wtf", methods=['GET', 'POST'])
-def gr_wtf():
-    form = GravitationForm()
-    if form.validate_on_submit():
-        m1 = form.m1.data
-        m2 = form.m2.data
-        r = form.r.data
-
-        f = (6 * m1 * m2) / (r ** 2)
-        return render_template("gravitation_wtf.html", form=form, output=f)
-    return render_template("gravitation_wtf.html", form=form)
 
 
 @app.route("/signUp", methods=['GET', 'POST'])
@@ -76,16 +63,16 @@ def signUp():
 
 @app.route("/users", methods=['GET', 'POST'])
 def getUsers():
-    return users
+    return render_template("users/list.html", users=users, count=len(users))
 
 
 @app.route("/users/<int:user_id>")
 def getUser(user_id: int):
     for user in users:
         if user.id == user_id:
-            return asdict(user)
+            return render_template("users/user.html", user=user)
 
-    return str(None)
+    return redirect("/users")
 
 
 @app.route("/delUser/<int:user_id>")
@@ -93,9 +80,8 @@ def delUser(user_id: int):
     for user in users:
         if user.id == user_id:
             users.remove(user)
-            return asdict(user)
 
-    return str(None)
+    return redirect("/users")
 
 
 if __name__ == '__main__':
