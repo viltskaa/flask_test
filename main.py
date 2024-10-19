@@ -5,6 +5,8 @@ from flask import Flask, render_template, redirect
 from forms.SignUpForm import SignUpForm
 from models import *
 
+from utils import Link
+
 users = []
 
 
@@ -35,7 +37,19 @@ def addUser(email, name, age, city, password):
 app = Flask(__name__)
 
 
-@app.route("/signUp", methods=['GET', 'POST'])
+@app.route('/')
+def index():
+    return render_template(
+        'layout/layout.html',
+        links=[
+            Link("Home", "/"),
+            Link("Add User", "/add")
+        ],
+        users=users
+    )
+
+
+@app.route("/add", methods=['GET', 'POST'])
 def signUp():
     form = SignUpForm()
 
@@ -70,9 +84,17 @@ def getUsers():
 def getUser(user_id: int):
     for user in users:
         if user.id == user_id:
-            return render_template("users/user.html", user=user)
+            return render_template(
+                "layout/user-layout.html",
+                links=[
+                    Link("Home", "/"),
+                    Link("Add User", "/add"),
+                    Link("Delete User", f"/delUser/{user.id}", class_name="bg-danger"),
+                ],
+                user=user
+            )
 
-    return redirect("/users")
+    return redirect("/")
 
 
 @app.route("/delUser/<int:user_id>")
@@ -81,7 +103,7 @@ def delUser(user_id: int):
         if user.id == user_id:
             users.remove(user)
 
-    return redirect("/users")
+    return redirect("/")
 
 
 if __name__ == '__main__':
