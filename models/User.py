@@ -3,7 +3,7 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class User:
-    id: int
+    id: int | None
     email: str
     name: str
     age: int
