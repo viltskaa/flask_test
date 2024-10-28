@@ -31,6 +31,11 @@ def addUser(email, name, age, city, password):
 app = Flask(__name__)
 
 
+@app.route('/tiktok')
+def tiktok():
+    return render_template("test.html")
+
+
 @app.route('/')
 def index():
     users = repositories.get_users()
@@ -116,4 +121,4 @@ if __name__ == '__main__':
 
     # generate_users(10)
     app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
-    app.run(debug=True)
+    app.run(debug=True, port=8080)
