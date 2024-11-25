@@ -1,11 +1,12 @@
 from random import randint
 
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, request
+from flask_login import LoginManager, login_required, login_user, logout_user
 
 import repositories
+from forms.SignInForm import SignInForm
 from forms.SignUpForm import SignUpForm
 from models import *
-
 from utils import Link
 
 
@@ -29,14 +30,16 @@ def addUser(email, name, age, city, password):
 
 
 app = Flask(__name__)
+login_manager = LoginManager()
 
 
-@app.route('/tiktok')
-def tiktok():
-    return render_template("test.html")
+@login_manager.user_loader
+def load_user(user_id):
+    return repositories.get_user(user_id)
 
 
 @app.route('/')
+@login_required
 def index():
     users = repositories.get_users()
     return render_template(
@@ -50,6 +53,7 @@ def index():
 
 
 @app.route("/add", methods=['GET', 'POST'])
+@login_required
 def signUp():
     form = SignUpForm()
 
@@ -75,17 +79,34 @@ def signUp():
     return render_template("formTemplate.html", form=form, btn_name="Регистрация!")
 
 
-@app.route("/users", methods=['GET', 'POST'])
-def getUsers():
-    users = repositories.get_users()
-    return render_template(
-        "users/list.html",
-        users=users,
-        count=len(users)
-    )
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    form = SignInForm()
+
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+
+        users = repositories.get_users()
+        for user in users:
+            if user.email == email and user.password == password:
+                login_user(user)
+                return redirect("/")
+
+        return redirect("/login")
+
+    return render_template("formTemplate.html", form=form, btn_name="Регистрация!")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/login")
 
 
 @app.route("/users/<int:user_id>")
+@login_required
 def getUser(user_id: int):
     users = repositories.get_users()
 
@@ -105,6 +126,7 @@ def getUser(user_id: int):
 
 
 @app.route("/delUser/<int:user_id>")
+@login_required
 def delUser(user_id: int):
     users = repositories.get_users()
 
@@ -116,9 +138,11 @@ def delUser(user_id: int):
 
 
 if __name__ == '__main__':
+    login_manager.init_app(app)
     app.app_context().push()
     repositories.create_table()
 
     # generate_users(10)
+
     app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
     app.run(debug=True, port=8080)
